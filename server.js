@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 
-const PORT = 8000;
+const PORT = process.env.PORT || 8000;
 const DB_FILE = path.join(__dirname, 'database.json');
 
 // In-Memory Database State
