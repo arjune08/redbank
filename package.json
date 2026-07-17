@@ -1,0 +1,12 @@
+{
+  "name": "blood-bank-live-radar",
+  "version": "1.0.0",
+  "description": "Blood Bank Live Radar Backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
