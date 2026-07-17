@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blood Bank Live Radar - Find Blood. Save Lives.</title>
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Leaflet.js Map CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Custom Style Sheet -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Google Fonts Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  
+  <!-- Tailwind Custom Configuration -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              red: {
+                50: '#fef2f2',
+                100: '#fee2e2',
+                500: '#ef4444',
+                600: '#dc2626',
+                700: '#b91c1c'
+              },
+              blue: {
+                50: '#f0f9ff',
+                100: '#e0f2fe',
+                500: '#0ea5e9',
+                600: '#0284c7',
+                700: '#0369a1'
+              }
+            }
+          },
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
+
+  <!-- Scroll Progress Indicator -->
+  <div class="fixed top-0 left-0 h-1 bg-gradient-to-r from-brand-red-500 to-brand-blue-500 z-[9999] transition-all duration-100" id="scroll-progress" style="width: 0%"></div>
+
+  <!-- Loading Radar Animation Screen -->
+  <div id="loading-screen">
+    <div class="flex flex-col items-center">
+      <!-- Beat line SVG -->
+      <svg class="w-48 h-24 text-red-500" viewBox="0 0 100 30" fill="none" stroke="currentColor" stroke-width="2">
+        <path class="heartbeat-path" d="M0,15 L35,15 L38,10 L41,20 L44,15 L47,15 L50,5 L53,25 L56,15 L59,15 L62,13 L65,17 L68,15 L100,15" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      <div class="mt-4 flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-red-500 animate-ping"></span>
+        <h3 class="text-xl font-bold tracking-wider text-slate-700 dark:text-slate-200 uppercase">Live Radar Active</h3>
+      </div>
+      <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">Checking signal relays...</p>
+    </div>
+  </div>
+
+  <!-- Sticky Navigation Header -->
+  <header class="sticky top-0 z-50 glass border-b border-slate-100 dark:border-slate-800 transition duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        
+        <!-- Brand Logo & Radar Blinker -->
+        <a href="#" data-target-page="home" class="flex items-center gap-2.5 group">
+          <div class="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-red-500 to-rose-600 text-white shadow-md group-hover:scale-105 transition-transform duration-300">
+            <i class="fas fa-heartbeat text-lg animate-heartbeat"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-brand-red-600 to-brand-blue-600 bg-clip-text text-transparent">Blood Bank</span>
+              <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+              </span>
+            </div>
+            <p class="text-[9px] uppercase tracking-widest text-slate-400 dark:text-slate-500 font-bold">Live Radar System</p>
+          </div>
+        </a>
+
+        <!-- Desktop Navigation Items -->
+        <nav class="hidden md:flex items-center gap-6">
+          <a href="#" data-target-page="home" class="text-slate-600 dark:text-slate-300 hover:text-red-500 dark:hover:text-red-400 text-sm font-medium transition">Home</a>
+          <a href="#" data-target-page="map" class="text-slate-600 dark:text-slate-300 hover:text-red-500 dark:hover:text-red-400 text-sm font-medium transition">Live Radar Map</a>
+          <a href="#" data-target-page="availability" class="text-slate-600 dark:text-slate-300 hover:text-red-500 dark:hover:text-red-400 text-sm font-medium transition">Availability</a>
+          <a href="#" data-target-page="donors" class="text-slate-600 dark:text-slate-300 hover:text-red-500 dark:hover:text-red-400 text-sm font-medium transition">Donors</a>
+          <a href="#" data-target-page="analytics" class="text-slate-600 dark:text-slate-300 hover:text-red-500 dark:hover:text-red-400 text-sm font-medium transition">Analytics</a>
+        </nav>
+
+        <!-- Right Buttons (SOS, Dark Mode, Menu) -->
+        <div class="flex items-center gap-3">
+          <!-- Dark Mode Button -->
+          <button id="theme-toggle" class="p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition duration-300" aria-label="Toggle Theme">
+            <i class="fas fa-moon text-slate-600 text-lg"></i>
+          </button>
+
+          <!-- Emergency SOS Call Button -->
+          <a href="#" data-target-page="sos" class="hidden sm:flex px-4 py-2 bg-brand-red-500 hover:bg-brand-red-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md shadow-red-500/20 hover:shadow-red-500/30 transition duration-300 items-center gap-1.5 animate-pulse">
+            <i class="fas fa-ambulance"></i> Emergency SOS
+          </a>
+
+          <!-- Mobile Menu Button -->
+          <button id="mobile-menu-btn" class="md:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition" aria-label="Open menu">
+            <i class="fas fa-bars text-xl"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Dropdown Navigation -->
+    <div id="mobile-menu" class="hidden md:hidden border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 pt-2 pb-4 space-y-1 shadow-inner">
+      <a href="#" data-target-page="home" class="block px-3 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium">Home</a>
+      <a href="#" data-target-page="map" class="block px-3 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium">Live Radar Map</a>
+      <a href="#" data-target-page="availability" class="block px-3 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium">Availability</a>
+      <a href="#" data-target-page="donors" class="block px-3 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium">Donors</a>
+      <a href="#" data-target-page="analytics" class="block px-3 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium">Analytics</a>
+      <a href="#" data-target-page="sos" class="block px-3 py-2 bg-red-500 text-white rounded-lg text-center font-bold uppercase text-xs tracking-wider">Emergency SOS</a>
+    </div>
+  </header>
+
+  <!-- SPA Core Pages Container -->
+  <main class="min-h-[calc(100vh-16rem)]">
+
+    <!-- ==============================================
+         HOME PAGE SECTION
+         ============================================== -->
+    <section id="page-home" class="page-section active">
+      <!-- Hero Header Section with Grid Pattern overlay -->
+      <div class="relative overflow-hidden bg-white dark:bg-slate-950 py-16 sm:py-24 bg-grid-pattern">
+        <!-- Radial gradient background glows -->
+        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-red-500/10 dark:bg-red-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+        <div class="absolute bottom-10 right-10 w-[300px] h-[300px] bg-sky-500/10 dark:bg-sky-500/5 rounded-full blur-[80px] pointer-events-none"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+          <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 text-xs font-bold tracking-wider uppercase mb-6 shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+            Real-time Healthcare Infrastructure
+          </div>
+
+          <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-4">
+            Blood Bank <span class="bg-gradient-to-r from-brand-red-500 to-rose-600 bg-clip-text text-transparent">Live Radar</span>
+          </h1>
+          
+          <p class="text-lg sm:text-xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto mb-10 font-medium">
+            Find Blood. Save Lives. Locate nearby stock coordinates, connect with active donors, and trigger secure SOS alerts instantly.
+          </p>
+
+          <!-- Floating Interactive Form Card -->
+          <div class="max-w-3xl mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-100 dark:border-slate-800 p-4 sm:p-6 rounded-3xl shadow-xl mb-12">
+            <form id="home-search-form" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              
+              <!-- Location Search Input -->
+              <div class="relative">
+                <label for="home-location" class="sr-only">Location</label>
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <input type="text" id="home-location" placeholder="Enter District or City (e.g. Chennai)" class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition">
+              </div>
+
+              <!-- Blood group dropdown selection -->
+              <div class="relative">
+                <label for="home-blood-group" class="sr-only">Blood Group</label>
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <i class="fas fa-tint"></i>
+                </div>
+                <select id="home-blood-group" class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-800 dark:text-slate-100 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none appearance-none transition">
+                  <option value="all">All Groups</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                </select>
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+                  <i class="fas fa-chevron-down text-xs"></i>
+                </div>
+              </div>
+
+              <!-- CTA buttons -->
+              <button type="submit" class="w-full py-3 bg-gradient-to-r from-brand-red-500 to-rose-600 hover:from-brand-red-600 hover:to-rose-700 text-white font-bold text-sm rounded-2xl shadow-md shadow-red-500/20 transition-all duration-300 flex items-center justify-center gap-2">
+                <i class="fas fa-search-location"></i> Find Blood
+              </button>
+            </form>
+          </div>
+
+          <!-- Hero Buttons Alternate CTAs -->
+          <div class="flex flex-wrap items-center justify-center gap-4">
+            <a href="#" data-target-page="map" class="px-6 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-2xl transition flex items-center gap-2">
+              <i class="fas fa-map-marked-alt text-brand-blue-500"></i> Open Live Radar Map
+            </a>
+            <a href="#" data-target-page="sos" class="px-6 py-3 bg-red-100 hover:bg-red-200 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-bold text-sm rounded-2xl transition flex items-center gap-2 border border-red-200 dark:border-red-900/30">
+              <i class="fas fa-broadcast-tower text-red-500 animate-pulse"></i> Broadcast SOS Signal
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Real-time Animated Statistics Panel -->
+      <div class="py-12 border-y border-slate-100 dark:border-slate-800 bg-white/40 dark:bg-slate-900/20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            
+            <!-- Card 1: Donors -->
+            <div class="glass p-6 rounded-3xl text-center flex flex-col items-center">
+              <div class="w-12 h-12 bg-red-50 dark:bg-red-950 text-red-500 rounded-2xl flex items-center justify-center mb-3 shadow-inner">
+                <i class="fas fa-users text-lg"></i>
+              </div>
+              <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100 counter-value" data-target="15420">0</span>
+              <span class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-widest font-bold mt-1">Registered Donors</span>
+            </div>
+
+            <!-- Card 2: Banks -->
+            <div class="glass p-6 rounded-3xl text-center flex flex-col items-center">
+              <div class="w-12 h-12 bg-sky-50 dark:bg-sky-950/40 text-brand-blue-500 rounded-2xl flex items-center justify-center mb-3 shadow-inner">
+                <i class="fas fa-hospital-alt text-lg"></i>
+              </div>
+              <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100 counter-value" data-target="382">0</span>
+              <span class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-widest font-bold mt-1">Blood Banks</span>
+            </div>
+
+            <!-- Card 3: Blood Available -->
+            <div class="glass p-6 rounded-3xl text-center flex flex-col items-center">
+              <div class="w-12 h-12 bg-red-50 dark:bg-red-950 text-red-500 rounded-2xl flex items-center justify-center mb-3 shadow-inner">
+                <i class="fas fa-tint text-lg animate-pulse"></i>
+              </div>
+              <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100 counter-value" data-target="8944">0</span>
+              <span class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-widest font-bold mt-1">Units Available</span>
+            </div>
+
+            <!-- Card 4: Lives Saved -->
+            <div class="glass p-6 rounded-3xl text-center flex flex-col items-center">
+              <div class="w-12 h-12 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500 rounded-2xl flex items-center justify-center mb-3 shadow-inner">
+                <i class="fas fa-hand-holding-heart text-lg"></i>
+              </div>
+              <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100 counter-value" data-target="47290">0</span>
+              <span class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-widest font-bold mt-1">Lives Saved</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Core Features Grid -->
+      <div class="py-20 bg-slate-50 dark:bg-slate-950">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center mb-16">
+            <h2 class="text-3xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-4xl">
+              Advanced Network Features
+            </h2>
+            <p class="mt-4 text-slate-500 dark:text-slate-400 max-w-xl mx-auto text-sm">
+              Our radar framework operates at peak clinical security to link nodes immediately when emergencies arise.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            
+            <!-- Feature 1 -->
+            <div class="glass p-8 rounded-3xl hover:shadow-lg transition group glow-border-red">
+              <div class="w-12 h-12 bg-red-50 dark:bg-red-950 text-red-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition duration-300">
+                <i class="fas fa-radar text-lg"></i>
+              </div>
+              <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Live Blood Availability</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Scan stocks at hospital and storage repositories in real time. Get actual volume reports directly.
+              </p>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="glass p-8 rounded-3xl hover:shadow-lg transition group glow-border-red">
+              <div class="w-12 h-12 bg-red-50 dark:bg-red-950 text-red-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition duration-300">
+                <i class="fas fa-broadcast-tower text-lg"></i>
+              </div>
+              <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Emergency SOS Broadcast</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Send a rapid geographic call-out signal. Alert all compatible matching donor records within a 5-mile boundary.
+              </p>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="glass p-8 rounded-3xl hover:shadow-lg transition group glow-border-blue">
+              <div class="w-12 h-12 bg-sky-50 dark:bg-sky-950/40 text-brand-blue-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition duration-300">
+                <i class="fas fa-map-marked text-lg"></i>
+              </div>
+              <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Nearby Blood Banks</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Seamless GPS tracing provides step-by-step maps and navigation routes straight to blood bank front desks.
+              </p>
+            </div>
+
+            <!-- Feature 4 -->
+            <div class="glass p-8 rounded-3xl hover:shadow-lg transition group glow-border-blue">
+              <div class="w-12 h-12 bg-sky-50 dark:bg-sky-950/40 text-brand-blue-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition duration-300">
+                <i class="fas fa-search text-lg"></i>
+              </div>
+              <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Fast Search filters</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Narrow listings by group, volume status, city, or distance. Find what you need without complex UI delays.
+              </p>
+            </div>
+
+            <!-- Feature 5 -->
+            <div class="glass p-8 rounded-3xl hover:shadow-lg transition group glow-border-red">
+              <div class="w-12 h-12 bg-red-50 dark:bg-red-950 text-red-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition duration-300">
+                <i class="fas fa-exclamation-triangle text-lg"></i>
+              </div>
+              <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Rare Blood Alerts</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Critical systems trigger immediate email/SMS notifications to rare donors when O-negative or AB-negative types deplete.
+              </p>
+            </div>
+
+            <!-- Feature 6 -->
+            <div class="glass p-8 rounded-3xl hover:shadow-lg transition group glow-border-blue">
+              <div class="w-12 h-12 bg-sky-50 dark:bg-sky-950/40 text-brand-blue-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition duration-300">
+                <i class="fas fa-users-cog text-lg"></i>
+              </div>
+              <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Community Donors</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Engage in custom voluntary loops, view verification badges, and message securely without revealing phone numbers.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- How It Works Section -->
+      <div class="py-20 bg-white dark:bg-slate-900/30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center mb-16">
+            <h2 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">How It Works</h2>
+            <p class="mt-4 text-slate-500 dark:text-slate-400 text-sm">Save lives in four basic steps using our real-time network interface.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
+            <!-- Connector Line for Desktop -->
+            <div class="hidden md:block absolute top-12 left-1/8 right-1/8 h-0.5 bg-gradient-to-r from-red-500/20 to-blue-500/20 z-0"></div>
+
+            <!-- Step 1 -->
+            <div class="relative z-10 flex flex-col items-center text-center group">
+              <div class="w-16 h-16 rounded-full bg-red-500 text-white font-bold text-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition duration-300 mb-4 border-4 border-slate-50 dark:border-slate-950">
+                1
+              </div>
+              <h4 class="font-bold text-slate-900 dark:text-white mb-2">Search Blood</h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400 px-4">Specify location boundaries and desired blood classifications.</p>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="relative z-10 flex flex-col items-center text-center group">
+              <div class="w-16 h-16 rounded-full bg-blue-500 text-white font-bold text-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition duration-300 mb-4 border-4 border-slate-50 dark:border-slate-950">
+                2
+              </div>
+              <h4 class="font-bold text-slate-900 dark:text-white mb-2">Find Nearby Banks</h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400 px-4">Trace exact stock levels and distances on our Leaflet radar.</p>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="relative z-10 flex flex-col items-center text-center group">
+              <div class="w-16 h-16 rounded-full bg-red-500 text-white font-bold text-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition duration-300 mb-4 border-4 border-slate-50 dark:border-slate-950">
+                3
+              </div>
+              <h4 class="font-bold text-slate-900 dark:text-white mb-2">Request Blood</h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400 px-4">Queue an emergency SOS broadcast to compatible nearby donors.</p>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="relative z-10 flex flex-col items-center text-center group">
+              <div class="w-16 h-16 rounded-full bg-emerald-500 text-white font-bold text-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition duration-300 mb-4 border-4 border-slate-50 dark:border-slate-950">
+                4
+              </div>
+              <h4 class="font-bold text-slate-900 dark:text-white mb-2">Save Lives</h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400 px-4">Facilitate donation transit, restore stock levels, and protect patients.</p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Testimonials Section -->
+      <div class="py-20 bg-slate-50 dark:bg-slate-950">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center mb-16">
+            <h2 class="text-3xl font-bold tracking-tight text-slate-950 dark:text-white">Community Endorsements</h2>
+            <p class="mt-4 text-slate-500 dark:text-slate-400 text-sm">Read stories from families and medical professionals who trust our radar network.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Testimonial 1 -->
+            <div class="glass p-6 rounded-3xl shadow-sm flex flex-col justify-between">
+              <p class="text-slate-600 dark:text-slate-300 italic text-sm mb-6 leading-relaxed">
+                "We needed O-negative blood for my grandmother's emergency surgery. Local hospital reserves were down. Thanks to Blood Bank Live Radar, we located an active stock reserve within 2 miles and contacted a nearby donor inside 10 minutes!"
+              </p>
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-500 font-extrabold text-sm shrink-0">
+                  RK
+                </div>
+                <div>
+                  <h4 class="font-bold text-slate-800 dark:text-slate-100 text-xs">Robert K. Vance</h4>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-500">Patient Guardian &bull; New York</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Testimonial 2 -->
+            <div class="glass p-6 rounded-3xl shadow-sm flex flex-col justify-between">
+              <p class="text-slate-600 dark:text-slate-300 italic text-sm mb-6 leading-relaxed">
+                "As the stock logistics supervisor at City Medical, keeping reserves steady is difficult. The Live Radar dashboard helps us broadcast out-of-stock notices dynamically, triggering voluntary donations when we reach critical levels."
+              </p>
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center text-sky-500 font-extrabold text-sm shrink-0">
+                  AM
+                </div>
+                <div>
+                  <h4 class="font-bold text-slate-800 dark:text-slate-100 text-xs">Dr. Angela Martinez</h4>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-500">Clinical Logistics Director &bull; St. Jude</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Testimonial 3 -->
+            <div class="glass p-6 rounded-3xl shadow-sm flex flex-col justify-between">
+              <p class="text-slate-600 dark:text-slate-300 italic text-sm mb-6 leading-relaxed">
+                "I signed up as a voluntary blood donor last year. The anonymized system lets me receive regional SOS calls on my phone safely. It's incredibly rewarding to get direct coordinates where my group A+ is urgently required."
+              </p>
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-500 font-extrabold text-sm shrink-0">
+                  SL
+                </div>
+                <div>
+                  <h4 class="font-bold text-slate-800 dark:text-slate-100 text-xs">Sarah Jenkins</h4>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-500">Active Voluntary Donor &bull; Brooklyn</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ Section Accordions -->
+      <div class="py-20 bg-white dark:bg-slate-900/30 border-t border-slate-100 dark:border-slate-800">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6">
+          <div class="text-center mb-16">
+            <h2 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Frequently Asked Questions</h2>
+            <p class="mt-4 text-slate-500 dark:text-slate-400 text-sm">Find answers to common queries regarding registration, maps, and safety protocols.</p>
+          </div>
+
+          <div class="space-y-4">
+            
+            <!-- Q1 -->
+            <div class="faq-item glass rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800/40">
+              <button class="faq-trigger w-full px-6 py-4 flex items-center justify-between text-left focus:outline-none">
+                <span class="font-bold text-slate-800 dark:text-slate-100 text-sm">Is my personal information and phone number secure?</span>
+                <i class="fas fa-chevron-down faq-icon text-slate-400 text-xs transition-transform duration-300"></i>
+              </button>
+              <div class="faq-answer">
+                <div class="px-6 pb-5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-100 dark:border-slate-800/30 pt-3">
+                  Yes, absolutely. Blood Bank Live Radar utilizes anonymized messaging links and voice masking numbers. Voluntary donors' precise telephone details are never displayed publicly in the donor listings.
+                </div>
+              </div>
+            </div>
+
+            <!-- Q2 -->
+            <div class="faq-item glass rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800/40">
+              <button class="faq-trigger w-full px-6 py-4 flex items-center justify-between text-left focus:outline-none">
+                <span class="font-bold text-slate-800 dark:text-slate-100 text-sm">How often is the blood bank stock data updated?</span>
+                <i class="fas fa-chevron-down faq-icon text-slate-400 text-xs transition-transform duration-300"></i>
+              </button>
+              <div class="faq-answer">
+                <div class="px-6 pb-5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-100 dark:border-slate-800/30 pt-3">
+                  Stock reserves are automatically synchronized every 15 minutes via secure clinical API endpoints connected directly to hospital database logs and blood bank depots.
+                </div>
+              </div>
+            </div>
+
+            <!-- Q3 -->
+            <div class="faq-item glass rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800/40">
+              <button class="faq-trigger w-full px-6 py-4 flex items-center justify-between text-left focus:outline-none">
+                <span class="font-bold text-slate-800 dark:text-slate-100 text-sm">How does the Emergency SOS broadcast system function?</span>
+                <i class="fas fa-chevron-down faq-icon text-slate-400 text-xs transition-transform duration-300"></i>
+              </button>
+              <div class="faq-answer">
+                <div class="px-6 pb-5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-100 dark:border-slate-800/30 pt-3">
+                  When a broadcast is submitted, our radar signals voluntary donors matching the blood profile within a 5km radius. They receive a secure request with transit directions directly to the clinical bedside.
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==============================================
+         LIVE RADAR MAP PAGE SECTION
+         ============================================== -->
+    <section id="page-map" class="page-section">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Header Info -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Live Blood Radar Map</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Interactive geographic directory of active medical reserves.</p>
+          </div>
+          
+          <!-- Quick Status Filters -->
+          <div class="flex flex-wrap items-center gap-2" id="map-filter-buttons">
+            <button id="map-filter-all" class="px-3 py-1.5 bg-red-500 text-white rounded-xl text-xs font-semibold shadow-md transition">All Stocks</button>
+            <button id="map-filter-available" class="px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition hover:bg-slate-100 dark:hover:bg-slate-700">Available</button>
+            <button id="map-filter-low" class="px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition hover:bg-slate-100 dark:hover:bg-slate-700">Low Stock</button>
+            <button id="map-filter-out" class="px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition hover:bg-slate-100 dark:hover:bg-slate-700">Out of Stock</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          
+          <!-- Map Sidebar Search & Navigation -->
+          <div class="glass p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col gap-4 h-fit">
+            <h3 class="font-bold text-slate-800 dark:text-slate-200 text-sm"><i class="fas fa-search-location text-red-500 mr-1.5"></i> Hospital Index</h3>
+            
+            <form id="map-search-form" class="relative">
+              <input type="text" id="map-search-input" placeholder="Search hospital name..." class="w-full pl-9 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-xs">
+                <i class="fas fa-search"></i>
+              </span>
+              <button type="submit" class="hidden"></button>
+            </form>
+
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-3">
+              <h4 class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-2.5">Map Legend</h4>
+              <div class="space-y-2.5 text-xs text-slate-600 dark:text-slate-400">
+                <div class="flex items-center gap-2">
+                  <span class="w-3.5 h-3.5 rounded-full bg-green-500 shrink-0"></span>
+                  <span>Stable Reserves (Green)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3.5 h-3.5 rounded-full bg-yellow-500 shrink-0"></span>
+                  <span>Low Reserves (Yellow)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3.5 h-3.5 rounded-full bg-red-500 shrink-0"></span>
+                  <span>Critical Stock/Empty (Red)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="border-t border-slate-100 dark:border-slate-800 pt-3">
+              <p class="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed"><i class="fas fa-info-circle mr-1"></i> Maps auto-update as stocks change. Click pins to see numbers and phone contacts.</p>
+            </div>
+          </div>
+
+          <!-- Leaflet Map Container -->
+          <div class="lg:col-span-3">
+            <div id="leaflet-map-container" class="w-full h-[550px] rounded-3xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800/60 z-10"></div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==============================================
+         BLOOD AVAILABILITY PAGE SECTION
+         ============================================== -->
+    <section id="page-availability" class="page-section">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Header Info -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Active Blood Stocks</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Aggregate metrics calculated across all active regional database registers.</p>
+          </div>
+          
+          <!-- Filters & Actions -->
+          <div class="flex flex-wrap items-center gap-3">
+            <!-- Text Search -->
+            <div class="relative min-w-[200px]">
+              <input type="text" id="availability-search" placeholder="Filter by Hospital name..." class="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-red-500 transition">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-xs">
+                <i class="fas fa-filter"></i>
+              </span>
+            </div>
+
+            <!-- Group Select -->
+            <select id="availability-filter-group" class="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-350 focus:ring-2 focus:ring-red-500 outline-none transition">
+              <option value="all">All Blood Groups</option>
+              <option value="A+">A+</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B-">B-</option>
+              <option value="AB+">AB+</option>
+              <option value="AB-">AB-</option>
+              <option value="O+">O+</option>
+              <option value="O-">O-</option>
+            </select>
+
+            <!-- Refresh Button Visual -->
+            <button onclick="triggerQuickRefresh('All')" class="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 hover:text-red-500 hover:border-red-500 transition shadow-sm" aria-label="Refresh Stock Listings">
+              <i class="fas fa-sync-alt text-sm"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Blood Grid -->
+        <div id="availability-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==============================================
+         DONOR DIRECTORY PAGE SECTION
+         ============================================== -->
+    <section id="page-donors" class="page-section">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Header Info -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Voluntary Donor Directory</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Volunteers registered in the system network who have opted into geo-SOS notifications.</p>
+          </div>
+          
+          <!-- Filters & Actions -->
+          <div class="flex flex-wrap items-center gap-3">
+            <!-- Search Text -->
+            <div class="relative min-w-[200px]">
+              <input type="text" id="donor-search" placeholder="Search by name/city..." class="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-red-500 transition">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-xs">
+                <i class="fas fa-search"></i>
+              </span>
+            </div>
+
+            <!-- Filter Group -->
+            <select id="donor-filter-group" class="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-350 focus:ring-2 focus:ring-red-500 outline-none transition">
+              <option value="all">Any Group</option>
+              <option value="A+">A+</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B-">B-</option>
+              <option value="AB+">AB+</option>
+              <option value="AB-">AB-</option>
+              <option value="O+">O+</option>
+              <option value="O-">O-</option>
+            </select>
+
+            <!-- Filter City -->
+            <select id="donor-filter-city" class="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-355 focus:ring-2 focus:ring-red-500 outline-none transition">
+              <option value="all">Any District/City</option>
+              <option value="Chennai">Chennai</option>
+              <option value="Coimbatore">Coimbatore</option>
+              <option value="Madurai">Madurai</option>
+              <option value="Trichy">Trichy</option>
+              <option value="Salem">Salem</option>
+              <option value="Vellore">Vellore</option>
+              <option value="Tirunelveli">Tirunelveli</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Donors Grid -->
+        <div id="donor-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==============================================
+         EMERGENCY SOS PAGE SECTION
+         ============================================== -->
+    <section id="page-sos" class="page-section">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          
+          <!-- SOS Broadcast Panel Form -->
+          <div class="lg:col-span-3">
+            <div class="glass p-6 sm:p-8 rounded-3xl border-2 border-red-500/30 dark:border-red-500/20 shadow-xl shadow-red-500/5 relative overflow-hidden">
+              <!-- Animated danger side-border indicator -->
+              <div class="absolute top-0 left-0 w-1.5 h-full bg-red-500 animate-pulse"></div>
+
+              <div class="flex items-center gap-3 mb-6">
+                <div class="w-12 h-12 bg-red-100 dark:bg-red-950/60 text-red-500 rounded-2xl flex items-center justify-center text-xl shadow-md shrink-0">
+                  <i class="fas fa-broadcast-tower animate-pulse"></i>
+                </div>
+                <div>
+                  <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Emergency SOS Broadcast</h2>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">Triggers geo-located emergency loops immediately.</p>
+                </div>
+              </div>
+
+              <!-- SOS FORM -->
+              <form id="sos-broadcast-form" class="space-y-4">
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <!-- Patient Name -->
+                  <div>
+                    <label for="sos-name" class="block text-xs font-bold text-slate-500 dark:text-slate-450 uppercase mb-1.5">Patient Full Name</label>
+                    <input type="text" id="sos-name" placeholder="Johnathan Doe" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-red-500 outline-none transition">
+                  </div>
+
+                  <!-- Blood Group needed -->
+                  <div>
+                    <label for="sos-group" class="block text-xs font-bold text-slate-500 dark:text-slate-450 uppercase mb-1.5">Required Blood Group</label>
+                    <select id="sos-group" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-red-500 outline-none transition">
+                      <option value="A+">A+</option>
+                      <option value="A-">A-</option>
+                      <option value="B+">B+</option>
+                      <option value="B-">B-</option>
+                      <option value="AB+">AB+</option>
+                      <option value="AB-">AB-</option>
+                      <option value="O+">O+</option>
+                      <option value="O-" selected>O-</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <!-- Units Required -->
+                  <div>
+                    <label for="sos-units" class="block text-xs font-bold text-slate-500 dark:text-slate-450 uppercase mb-1.5">Units Required</label>
+                    <input type="number" id="sos-units" min="1" max="10" value="1" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-red-500 outline-none transition">
+                  </div>
+
+                  <!-- Contact Number -->
+                  <div>
+                    <label for="sos-contact" class="block text-xs font-bold text-slate-500 dark:text-slate-450 uppercase mb-1.5">Guardian Contact Number</label>
+                    <input type="tel" id="sos-contact" placeholder="+1 (555) 019-2834" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-red-500 outline-none transition">
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <!-- Hospital Name -->
+                  <div>
+                    <label for="sos-hospital" class="block text-xs font-bold text-slate-500 dark:text-slate-450 uppercase mb-1.5">Hospital / Facility Name</label>
+                    <input type="text" id="sos-hospital" placeholder="City General Hospital" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-red-500 outline-none transition">
+                  </div>
+
+                  <!-- Location -->
+                  <div>
+                    <label for="sos-location" class="block text-xs font-bold text-slate-500 dark:text-slate-450 uppercase mb-1.5">Hospital Location / City area</label>
+                    <input type="text" id="sos-location" placeholder="Times Square area" required class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-red-500 outline-none transition">
+                  </div>
+                </div>
+
+                <div class="pt-4">
+                  <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-750 text-white font-bold rounded-2xl transition duration-300 shadow-lg shadow-red-500/20 hover:shadow-red-500/35 uppercase text-xs tracking-wider flex items-center justify-center gap-2">
+                    <i class="fas fa-bullhorn text-sm animate-pulse"></i> BROADCAST SOS SIGNAL
+                  </button>
+                </div>
+              </form>
+
+            </div>
+          </div>
+
+          <!-- SOS Right list: Ongoing broadcasts -->
+          <div class="lg:col-span-2 flex flex-col gap-6">
+            <div class="glass p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800/80">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-1.5">
+                  <span class="relative flex h-2.5 w-2.5">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                  </span>
+                  Active SOS Relays
+                </h3>
+                <span class="text-[10px] text-slate-450 font-bold uppercase">Realtime Log</span>
+              </div>
+
+              <!-- List Container -->
+              <div class="space-y-4 max-h-[380px] overflow-y-auto pr-1" id="sos-recent-list">
+                <!-- Loaded dynamically via script.js -->
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Radar Animation Scan Overlay -->
+      <div id="sos-radar-popup" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md hidden items-center justify-center z-[99999] px-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-8 rounded-3xl text-center max-w-sm w-full shadow-2xl relative">
+          <!-- Pulsing Radar Circles -->
+          <div class="w-24 h-24 bg-red-500/10 dark:bg-red-500/5 border border-red-500/40 rounded-full mx-auto flex items-center justify-center mb-6 relative radar-pulse">
+            <i class="fas fa-satellite-dish text-3xl text-red-500 animate-bounce"></i>
+          </div>
+          
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Broadcasting SOS Signals...</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-4">
+            Scanning regional geographic channels. Linking with voluntary O-negative database nodes within 5km radius...
+          </p>
+          <div class="w-full bg-slate-100 dark:bg-slate-800 h-1 rounded-full overflow-hidden">
+            <div class="h-full bg-red-500 animate-[draw-heartbeat_3.5s_infinite_linear]" style="width: 100%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success Dialog Popup -->
+      <div id="sos-success-popup" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md hidden items-center justify-center z-[99999] px-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-8 rounded-3xl text-center max-w-sm w-full shadow-2xl">
+          <div class="w-16 h-16 bg-green-500/10 text-green-500 rounded-full mx-auto flex items-center justify-center mb-6 text-2xl">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Emergency Request Sent</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
+            Broadcast request successfully compiled and dispatched. Matching voluntary donors have been notified on their mobile devices!
+          </p>
+          
+          <button onclick="closeSOSSuccessPopup()" class="w-full py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold transition shadow-md shadow-red-500/20">
+            Acknowledge & Close
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==============================================
+         ANALYTICS PAGE SECTION
+         ============================================== -->
+    <section id="page-analytics" class="page-section">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Header Info -->
+        <div class="mb-8">
+          <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Analytics Dashboard</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Statistical calculations, stock metrics, and weekly tracking trends.</p>
+        </div>
+
+        <!-- Dashboard Mini Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <!-- Card 1 -->
+          <div class="glass p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800/80">
+            <p class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider mb-1">Total Blood Units</p>
+            <h3 class="text-2xl font-extrabold text-slate-800 dark:text-slate-100">8,944</h3>
+            <span class="text-[10px] text-green-500 font-semibold"><i class="fas fa-caret-up mr-0.5"></i> +4.2% from yesterday</span>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="glass p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800/80">
+            <p class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider mb-1">Active Donors</p>
+            <h3 class="text-2xl font-extrabold text-slate-800 dark:text-slate-100">15,420</h3>
+            <span class="text-[10px] text-green-500 font-semibold"><i class="fas fa-caret-up mr-0.5"></i> +12 new volunteers today</span>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="glass p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800/80">
+            <p class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider mb-1">Ongoing SOS Requests</p>
+            <h3 class="text-2xl font-extrabold text-red-500">2 Active</h3>
+            <span class="text-[10px] text-slate-450 dark:text-slate-500"><i class="fas fa-clock mr-0.5"></i> Updates every 10s</span>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="glass p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800/80">
+            <p class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider mb-1">Connected Centers</p>
+            <h3 class="text-2xl font-extrabold text-slate-800 dark:text-slate-100">382 Banks</h3>
+            <span class="text-[10px] text-green-500 font-semibold"><i class="fas fa-check-circle mr-0.5"></i> 100% operational relays</span>
+          </div>
+        </div>
+
+        <!-- Chart JS Canvas Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- Chart 1: Distribution -->
+          <div class="glass p-5 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-sm flex flex-col justify-between h-[360px]">
+            <div>
+              <h3 class="font-bold text-slate-800 dark:text-slate-200 text-sm mb-1">Blood Group Distribution</h3>
+              <p class="text-[10px] text-slate-450 mb-4">Total stock proportion ratios across grid repositories.</p>
+            </div>
+            <div class="flex-grow relative h-[240px]">
+              <canvas id="chart-distribution"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 2: Weekly Requests -->
+          <div class="glass p-5 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-sm flex flex-col justify-between h-[360px]">
+            <div>
+              <h3 class="font-bold text-slate-800 dark:text-slate-200 text-sm mb-1">Weekly SOS Requests</h3>
+              <p class="text-[10px] text-slate-450 mb-4">Quantity trends of emergency distress triggers generated.</p>
+            </div>
+            <div class="flex-grow relative h-[240px]">
+              <canvas id="chart-weekly"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 3: Monthly Donations -->
+          <div class="glass p-5 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-sm flex flex-col justify-between h-[360px]">
+            <div>
+              <h3 class="font-bold text-slate-800 dark:text-slate-200 text-sm mb-1">Monthly Donations</h3>
+              <p class="text-[10px] text-slate-450 mb-4">Bar record of units provided by voluntarily registered donors.</p>
+            </div>
+            <div class="flex-grow relative h-[240px]">
+              <canvas id="chart-monthly"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==============================================
+       CONTACT SECURE MODAL DETAILS (DONOR COMPONENT)
+       ============================================== -->
+  <div id="contact-modal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md hidden items-center justify-center z-[99999] px-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-6 rounded-3xl max-w-sm w-full shadow-2xl relative">
+      <button onclick="closeContactModal()" class="absolute top-4 right-4 text-slate-450 hover:text-slate-600 dark:hover:text-slate-200 transition text-sm">
+        <i class="fas fa-times"></i>
+      </button>
+      <div id="contact-modal-text">
+        <!-- Loaded dynamically on trigger click -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Toast Alerts Stack Container -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-[999999] flex flex-col gap-3 pointer-events-none">
+    <!-- Populated dynamically via script.js -->
+  </div>
+
+  <!-- Back to Top Button -->
+  <button id="btn-back-to-top" class="fixed bottom-6 left-6 z-40 w-11 h-11 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition duration-200 flex items-center justify-center" aria-label="Scroll back to top">
+    <i class="fas fa-arrow-up"></i>
+  </button>
+
+  <!-- Professional Footer -->
+  <footer class="bg-slate-900 dark:bg-slate-950 text-slate-400 py-12 border-t border-slate-800/60 mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+        
+        <!-- About Widget -->
+        <div class="space-y-4">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-red-500 text-white flex items-center justify-center shadow-md">
+              <i class="fas fa-heartbeat"></i>
+            </div>
+            <span class="font-extrabold text-slate-100 text-base">Blood Bank Radar</span>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Leading medical asset geolocation framework built to secure critical blood stocks and notify community registries during surgical emergencies.
+          </p>
+        </div>
+
+        <!-- Pages Nav Link Widget -->
+        <div>
+          <h4 class="text-xs font-bold text-slate-100 uppercase tracking-widest mb-4">Radar Directory</h4>
+          <ul class="space-y-2 text-xs">
+            <li><a href="#" data-target-page="home" class="hover:text-slate-200 transition">Dashboard Home</a></li>
+            <li><a href="#" data-target-page="map" class="hover:text-slate-200 transition">Live Coordinates Map</a></li>
+            <li><a href="#" data-target-page="availability" class="hover:text-slate-200 transition">Stock Availability</a></li>
+            <li><a href="#" data-target-page="donors" class="hover:text-slate-200 transition">Active Donor Records</a></li>
+          </ul>
+        </div>
+
+        <!-- Contact Support Info -->
+        <div>
+          <h4 class="text-xs font-bold text-slate-100 uppercase tracking-widest mb-4">Emergency Relay Support</h4>
+          <ul class="space-y-2 text-xs text-slate-400">
+            <li><i class="fas fa-phone-alt text-brand-red-500 mr-1.5"></i> Toll-Free Hotline: 1-800-DONATE-LIVES</li>
+            <li><i class="fas fa-envelope text-brand-blue-500 mr-1.5"></i> Dispatch Node: relay@bloodbankradar.live</li>
+            <li><i class="fas fa-map-marker-alt text-brand-red-500 mr-1.5"></i> New York Dispatch Center</li>
+          </ul>
+        </div>
+
+        <!-- Active System status Widget -->
+        <div>
+          <h4 class="text-xs font-bold text-slate-100 uppercase tracking-widest mb-4">Server Status Indicators</h4>
+          <div class="bg-slate-800/40 p-4 rounded-2xl border border-slate-800 text-xs">
+            <div class="flex items-center justify-between mb-2">
+              <span>Main Relay Loop:</span>
+              <span class="text-emerald-400 font-semibold flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Active
+              </span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>Data Synced:</span>
+              <span class="text-slate-350">12 secs ago</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer Bottom Copyright & Socials -->
+      <div class="pt-8 border-t border-slate-800/50 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+        <p>&copy; 2026 Blood Bank Live Radar System. All rights reserved. Designed for hospital hackathons.</p>
+        <div class="flex items-center gap-4 text-slate-550">
+          <a href="#" class="hover:text-slate-200 transition"><i class="fab fa-twitter text-base"></i></a>
+          <a href="#" class="hover:text-slate-200 transition"><i class="fab fa-github text-base"></i></a>
+          <a href="#" class="hover:text-slate-200 transition"><i class="fab fa-linkedin text-base"></i></a>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- Core App Logic Script -->
+  <script src="script.js"></script>
+</body>
+</html>

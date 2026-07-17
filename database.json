@@ -1,0 +1,107 @@
+{
+  "bloodBanks": [
+    {
+      "id": 1,
+      "name": "Rajiv Gandhi Government General Hospital",
+      "address": "E.V.R. Periyar Salai, Park Town, Chennai, TN 600003",
+      "lat": 13.0818,
+      "lng": 80.2758,
+      "phone": "+91 44 2530 5000",
+      "distance": 1.2,
+      "status": "available",
+      "stock": { "A+": 64, "A-": 12, "B+": 58, "B-": 10, "AB+": 24, "AB-": 5, "O+": 85, "O-": 22 }
+    },
+    {
+      "id": 2,
+      "name": "Christian Medical College (CMC)",
+      "address": "Ida Scudder Rd, Vellore, TN 632004",
+      "lat": 12.9248,
+      "lng": 79.1348,
+      "phone": "+91 416 228 1000",
+      "distance": 138,
+      "status": "available",
+      "stock": { "A+": 48, "A-": 8, "B+": 32, "B-": 6, "AB+": 16, "AB-": 2, "O+": 70, "O-": 15 }
+    },
+    {
+      "id": 3,
+      "name": "Government Rajaji Hospital",
+      "address": "Panagal Rd, Madurai, TN 625020",
+      "lat": 9.9264,
+      "lng": 78.1240,
+      "phone": "+91 452 253 2535",
+      "distance": 462,
+      "status": "low",
+      "stock": { "A+": 12, "A-": 2, "B+": 18, "B-": 1, "AB+": 4, "AB-": 0, "O+": 20, "O-": 3 }
+    },
+    {
+      "id": 4,
+      "name": "Coimbatore Medical College Hospital",
+      "address": "Trichy Rd, Coimbatore, TN 641018",
+      "lat": 11.0028,
+      "lng": 76.9936,
+      "phone": "+91 422 230 1393",
+      "distance": 490,
+      "status": "available",
+      "stock": { "A+": 55, "A-": 14, "B+": 42, "B-": 8, "AB+": 20, "AB-": 4, "O+": 60, "O-": 12 }
+    },
+    {
+      "id": 5,
+      "name": "Mahatma Gandhi Memorial Government Hospital",
+      "address": "Collector Office Road, Cantonment, Trichy, TN 620001",
+      "lat": 10.8037,
+      "lng": 78.6856,
+      "phone": "+91 431 241 5522",
+      "distance": 320,
+      "status": "low",
+      "stock": { "A+": 10, "A-": 1, "B+": 15, "B-": 2, "AB+": 5, "AB-": 0, "O+": 14, "O-": 2 }
+    },
+    {
+      "id": 6,
+      "name": "Apollo Hospitals Greams Road",
+      "address": "21, Greams Lane, Off Greams Road, Chennai, TN 600006",
+      "lat": 13.0601,
+      "lng": 80.2514,
+      "phone": "+91 44 2829 0200",
+      "distance": 3.5,
+      "status": "available",
+      "stock": { "A+": 30, "A-": 9, "B+": 25, "B-": 5, "AB+": 12, "AB-": 3, "O+": 45, "O-": 10 }
+    },
+    {
+      "id": 7,
+      "name": "Gov Mohan Kumaramangalam Medical College",
+      "address": "Collectorate Rd, Salem, TN 636030",
+      "lat": 11.6662,
+      "lng": 78.1408,
+      "phone": "+91 427 221 3307",
+      "distance": 340,
+      "status": "out",
+      "stock": { "A+": 0, "A-": 0, "B+": 2, "B-": 0, "AB+": 1, "AB-": 0, "O+": 4, "O-": 0 }
+    },
+    {
+      "id": 8,
+      "name": "Tirunelveli Medical College Hospital",
+      "address": "High Ground Rd, Palayamkottai, Tirunelveli, TN 627011",
+      "lat": 8.7118,
+      "lng": 77.7335,
+      "phone": "+91 462 257 2733",
+      "distance": 620,
+      "status": "available",
+      "stock": { "A+": 28, "A-": 6, "B+": 20, "B-": 4, "AB+": 10, "AB-": 1, "O+": 35, "O-": 8 }
+    }
+  ],
+  "donors": [
+    { "name": "Adhithya Kumar", "group": "O-", "city": "Chennai", "available": "Available", "distance": "2.1 km", "phone": "+91 98401 23456", "avatar": "AK" },
+    { "name": "Priyanka Devi", "group": "A+", "city": "Coimbatore", "available": "Available", "distance": "4.5 km", "phone": "+91 94440 98765", "avatar": "PD" },
+    { "name": "Murugan Pillai", "group": "B+", "city": "Madurai", "available": "Donated recently", "distance": "8.2 km", "phone": "+91 97890 12345", "avatar": "MP" },
+    { "name": "Divya Raman", "group": "AB-", "city": "Chennai", "available": "Available", "distance": "5.3 km", "phone": "+91 90030 54321", "avatar": "DR" },
+    { "name": "Ramesh Balaji", "group": "O+", "city": "Trichy", "available": "Available", "distance": "6.7 km", "phone": "+91 98940 87654", "avatar": "RB" },
+    { "name": "Koushik Raja", "group": "B-", "city": "Salem", "available": "Available", "distance": "3.4 km", "phone": "+91 95000 65432", "avatar": "KR" },
+    { "name": "Nithya Selvi", "group": "A-", "city": "Tirunelveli", "available": "Donated recently", "distance": "5.1 km", "phone": "+91 99400 32109", "avatar": "NS" },
+    { "name": "Sanjay Krishnan", "group": "AB+", "city": "Vellore", "available": "Available", "distance": "1.8 km", "phone": "+91 96000 11223", "avatar": "SK" },
+    { "name": "Lakshmi Prasanna", "group": "O-", "city": "Madurai", "available": "Available", "distance": "11.2 km", "phone": "+91 91760 44556", "avatar": "LP" }
+  ],
+  "sosRequests": [
+    { "id": 101, "patient": "Karthik Raja", "group": "O-", "units": 3, "hospital": "Rajiv Gandhi Government General Hospital", "phone": "+91 98450 11223", "location": "Chennai", "time": "5 mins ago", "active": true },
+    { "id": 102, "patient": "Anjali Sharma", "group": "AB-", "units": 2, "hospital": "Coimbatore Medical College Hospital", "phone": "+91 99430 44556", "location": "Coimbatore", "time": "18 mins ago", "active": true }
+  ]
+}
